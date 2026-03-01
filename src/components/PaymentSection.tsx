@@ -78,8 +78,9 @@ const PaymentSection = ({ open, onOpenChange, inquiryData, meetingDate, meetingT
         window.open(`https://wa.me/919324236203?text=${msg}`, "_blank");
         onComplete();
       } catch (err: any) {
+        console.error("SUPABASE INSERT ERROR:", err);
         toast.dismiss("payment");
-        toast.error("Failed to save booking: " + err.message);
+        toast.error(`Fail: ${err.message || err.details || JSON.stringify(err)}`);
       } finally {
         setSubmitting(false);
       }
