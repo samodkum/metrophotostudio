@@ -17,6 +17,7 @@ interface Inquiry {
   meeting_date: string | null;
   meeting_time: string | null;
   payment_status: string;
+  admin_meeting_status: string | null;
   payment_screenshot_url: string | null;
   created_at: string;
 }
@@ -32,9 +33,9 @@ const InquiryManagement = () => {
 
   useEffect(() => { fetch(); }, []);
 
-  const updateStatus = async (id: string, status: string) => {
-    await supabase.from("inquiries").update({ payment_status: status }).eq("id", id);
-    toast({ title: `Status updated to ${status}` });
+  const updateStatus = async (id: string, field: "payment_status" | "admin_meeting_status", status: string) => {
+    await supabase.from("inquiries").update({ [field]: status }).eq("id", id);
+    toast({ title: `${field.replace('_', ' ')} updated to ${status}` });
     fetch();
   };
 
@@ -64,6 +65,7 @@ const InquiryManagement = () => {
               <TableHead>Phone</TableHead>
               <TableHead>Meeting</TableHead>
               <TableHead>Payment</TableHead>
+              <TableHead>Admin Approval</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -81,18 +83,26 @@ const InquiryManagement = () => {
                 <TableCell>
                   <Badge variant={statusColor(inq.payment_status) as any}>{inq.payment_status}</Badge>
                 </TableCell>
+                <TableCell>
+                  <Badge variant={inq.admin_meeting_status === 'approved' ? 'default' : 'secondary' as any}>
+                    {inq.admin_meeting_status || 'pending'}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {format(new Date(inq.created_at), "dd MMM yyyy")}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" title="Verify" onClick={() => updateStatus(inq.id, "verified")}>
+                    <Button size="icon" variant="ghost" title="Verify Payment" onClick={() => updateStatus(inq.id, "payment_status", "verified")}>
                       <Check className="h-4 w-4 text-green-500" />
                     </Button>
-                    <Button size="icon" variant="ghost" title="Reject" onClick={() => updateStatus(inq.id, "rejected")}>
+                    <Button size="icon" variant="ghost" title="Approve Meeting Link" onClick={() => updateStatus(inq.id, "admin_meeting_status", "approved")}>
+                      <ExternalLink className="h-4 w-4 text-blue-500" />
+                    </Button>
+                    <Button size="icon" variant="ghost" title="Reject Payment" onClick={() => updateStatus(inq.id, "payment_status", "rejected")}>
                       <X className="h-4 w-4 text-destructive" />
                     </Button>
-                    <Button size="icon" variant="ghost" title="WhatsApp" onClick={() => openWhatsApp(inq)}>
+                    <Button size="icon" variant="ghost" title="WhatsApp Client" onClick={() => openWhatsApp(inq)}>
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                     {inq.payment_screenshot_url && (

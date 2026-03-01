@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
+import CategoriesSection from "@/components/CategoriesSection";
 import GallerySection from "@/components/GallerySection";
 import ServicesSection from "@/components/ServicesSection";
 import InstagramSection from "@/components/InstagramSection";
@@ -75,6 +76,7 @@ const Index = () => {
       <Navbar onBookNow={openBooking} />
       <HeroSection onBookNow={openBooking} />
       <ServicesSection />
+      <CategoriesSection />
       <GallerySection />
       <TestimonialsSection />
       <InstagramSection />

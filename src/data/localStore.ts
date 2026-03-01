@@ -4,6 +4,8 @@ export interface LocalCategory {
     id: string;
     name: string;
     slug: string;
+    cover_image_url?: string;
+    description?: string;
 }
 
 export interface LocalGalleryItem {
@@ -38,9 +40,9 @@ export const getCategories = (): LocalCategory[] => {
     // Auto-seed some initial categories if empty
     if (!raw) {
         const defaultCats = [
-            { id: uuidv4(), name: "Wedding", slug: "wedding" },
-            { id: uuidv4(), name: "Pre-Wedding", slug: "pre-wedding" },
-            { id: uuidv4(), name: "Baby Shoot", slug: "baby-shoot" },
+            { id: uuidv4(), name: "Wedding", slug: "wedding", description: "Our comprehensive wedding photography packages cover your entire special day from getting ready to the final dance." },
+            { id: uuidv4(), name: "Pre-Wedding", slug: "pre-wedding", description: "Romantic outdoor and indoor shoots to capture your chemistry and build excitement before the big day." },
+            { id: uuidv4(), name: "Baby Shoot", slug: "baby-shoot", description: "Adorable, safe, and creative photography sessions to immortalize your newborn's earliest moments." },
         ];
         localStorage.setItem("site_categories", JSON.stringify(defaultCats));
         return defaultCats;

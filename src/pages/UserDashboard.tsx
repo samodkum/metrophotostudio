@@ -13,6 +13,7 @@ interface UserInquiry {
     meeting_time: string;
     payment_status: string;
     meet_link?: string;
+    admin_meeting_status?: string | null;
 }
 
 const UserDashboard = () => {
@@ -106,8 +107,8 @@ const UserDashboard = () => {
                                                     {booking.shoot_category || "Consultation"}
                                                 </CardTitle>
                                                 <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${booking.payment_status === 'verified'
-                                                        ? 'bg-green-500/10 text-green-500 border border-green-500/20'
-                                                        : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                                                    ? 'bg-green-500/10 text-green-500 border border-green-500/20'
+                                                    : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
                                                     }`}>
                                                     {booking.payment_status === 'verified' ? 'Confirmed' : 'Pending Payment'}
                                                 </span>
@@ -132,7 +133,7 @@ const UserDashboard = () => {
                                             </div>
 
                                             <div className="pt-4 mt-2 border-t border-border/50">
-                                                {booking.meet_link ? (
+                                                {booking.meet_link && booking.admin_meeting_status === 'approved' ? (
                                                     <Button
                                                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
                                                         onClick={() => window.open(booking.meet_link, "_blank")}
@@ -142,7 +143,7 @@ const UserDashboard = () => {
                                                     </Button>
                                                 ) : (
                                                     <div className="text-center p-3 rounded-lg bg-secondary border border-border">
-                                                        <p className="text-xs text-muted-foreground font-medium">Meeting link will be provided soon.</p>
+                                                        <p className="text-xs text-muted-foreground font-medium">Meeting link will be provided once an Admin approves your booking.</p>
                                                     </div>
                                                 )}
                                             </div>
