@@ -4,7 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Loader2, Camera, Calendar } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import InquiryFormDialog from "@/components/InquiryFormDialog";
+import InquiryFormDialog, { type InquiryData } from "@/components/InquiryFormDialog";
+import BookingSelectionDialog from "@/components/BookingSelectionDialog";
+import MeetingScheduler from "@/components/MeetingScheduler";
+import PaymentSection from "@/components/PaymentSection";
+import { useUser, useClerk } from "@clerk/clerk-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+
+type BookingStep = "closed" | "selection" | "inquiry" | "meeting" | "payment";
 
 const CategoryDetail = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -12,7 +20,102 @@ const CategoryDetail = () => {
     const [category, setCategory] = useState<any>(null);
     const [items, setItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isBookingOpen, setIsBookingOpen] = useState(false);
+
+    // Booking flow state
+    const [step, setStep] = useState<BookingStep>("closed");
+    const [bookingType, setBookingType] = useState<"free" | "paid" | null>(null);
+    const [inquiryData, setInquiryData] = useState<InquiryData | null>(null);
+    const [meetingDate, setMeetingDate] = useState<Date | null>(null);
+    const [meetingTime, setMeetingTime] = useState("");
+    const { user, isSignedIn } = useUser();
+    const clerk = useClerk();
+
+    const openBooking = () => {
+        if (isSignedIn) {
+            setStep("selection");
+        } else {
+            clerk.openSignIn({
+                fallbackRedirectUrl: window.location.href,
+                forceRedirectUrl: window.location.href,
+            });
+        }
+    };
+
+    const handleSelection = (type: "free" | "paid") => {
+        setBookingType(type);
+        setStep("inquiry");
+    };
+
+    const handleInquirySubmit = (data: InquiryData) => {
+        setInquiryData(data);
+        setStep("meeting");
+    };
+
+    const handleMeetingSubmit = async (date: Date, time: string) => {
+        setMeetingDate(date);
+        setMeetingTime(time);
+
+        if (bookingType === "free") {
+            if (!inquiryData) return;
+
+            toast.loading("Confirming your free callback...", { id: "free-booking" });
+
+            try {
+                const { error } = await supabase.from("inquiries").insert({
+                    user_id: user?.id,
+                    full_name: inquiryData.fullName,
+                    email: inquiryData.email,
+                    phone: inquiryData.phone,
+                    whatsapp: inquiryData.whatsapp,
+                    shoot_category: inquiryData.shootCategory,
+                    address: inquiryData.address,
+                    meeting_date: date.toISOString(),
+                    meeting_time: time,
+                    payment_status: "verified",
+                    razorpay_payment_id: "free_callback",
+                    meet_link: null,
+                });
+
+                if (error) throw error;
+
+                await fetch("https://formspree.io/f/mreyekkg", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        Type: "Free Callback Request",
+                        Name: inquiryData.fullName,
+                        Email: inquiryData.email,
+                        Phone: inquiryData.phone,
+                        WhatsApp: inquiryData.whatsapp,
+                        Category: inquiryData.shootCategory,
+                        Address: inquiryData.address,
+                        Date: format(date, "PPP"),
+                        Time: time
+                    })
+                });
+
+                toast.dismiss("free-booking");
+                toast.success("Callback booked successfully! Our team will call you at the scheduled time.");
+
+                handleComplete();
+
+            } catch (err: any) {
+                toast.dismiss("free-booking");
+                toast.error(`Booking failed: ${err.message}`);
+            }
+
+        } else {
+            setStep("payment");
+        }
+    };
+
+    const handleComplete = () => {
+        setStep("closed");
+        setBookingType(null);
+        setInquiryData(null);
+        setMeetingDate(null);
+        setMeetingTime("");
+    };
 
     useEffect(() => {
         async function fetchCategoryData() {
@@ -67,7 +170,7 @@ const CategoryDetail = () => {
 
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
-            <Navbar onBookNow={() => setIsBookingOpen(true)} />
+            <Navbar onBookNow={openBooking} />
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 overflow-hidden">
@@ -93,7 +196,7 @@ const CategoryDetail = () => {
                     <Button
                         className="bg-gold-gradient text-primary-foreground px-8 py-6 rounded-full text-lg font-semibold hover:shadow-gold hover:scale-105 transition-all duration-300 animate-fade-in"
                         style={{ animationDelay: "0.3s" }}
-                        onClick={() => setIsBookingOpen(true)}
+                        onClick={openBooking}
                     >
                         <Calendar className="mr-2 h-5 w-5" />
                         Book Your {category.name} Session
@@ -195,7 +298,7 @@ const CategoryDetail = () => {
                     </p>
                     <Button
                         className="bg-gold-gradient text-primary-foreground px-8 py-6 rounded-full text-lg font-semibold hover:shadow-gold transition-all duration-300"
-                        onClick={() => setIsBookingOpen(true)}
+                        onClick={openBooking}
                     >
                         Schedule Consultation <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
@@ -208,12 +311,33 @@ const CategoryDetail = () => {
                 </div>
             </footer>
 
-            {/* Pass the category name as pre-selected to the inquiry form */}
+            {/* Full Booking Flow */}
+            <BookingSelectionDialog
+                open={step === "selection"}
+                onOpenChange={(open) => !open && setStep("closed")}
+                onSelect={handleSelection}
+            />
+
             <InquiryFormDialog
-                open={isBookingOpen}
-                onOpenChange={setIsBookingOpen}
-                onSubmit={() => { }}
+                open={step === "inquiry"}
+                onOpenChange={(open) => !open && setStep("closed")}
+                onSubmit={handleInquirySubmit}
                 defaultCategory={category.name}
+            />
+
+            <MeetingScheduler
+                open={step === "meeting"}
+                onOpenChange={(open) => !open && setStep("closed")}
+                onSubmit={handleMeetingSubmit}
+            />
+
+            <PaymentSection
+                open={step === "payment"}
+                onOpenChange={(open) => !open && setStep("closed")}
+                inquiryData={inquiryData}
+                meetingDate={meetingDate}
+                meetingTime={meetingTime}
+                onComplete={handleComplete}
             />
         </div>
     );

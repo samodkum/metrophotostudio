@@ -106,24 +106,8 @@ const PaymentSection = ({ open, onOpenChange, inquiryData, meetingDate, meetingT
               })
             });
 
-            // Build WhatsApp message
-            const msg = encodeURIComponent(
-              `🎬 *New Booking Confirmed - Metro Photo Studio*\n\n` +
-              `👤 Name: ${inquiryData.fullName}\n` +
-              `📧 Email: ${inquiryData.email}\n` +
-              `📱 Phone: ${inquiryData.phone}\n` +
-              `💬 WhatsApp: ${inquiryData.whatsapp}\n` +
-              `📸 Category: ${inquiryData.shootCategory}\n` +
-              `📍 Address: ${inquiryData.address}\n` +
-              `📅 Meeting: ${format(meetingDate, "PPP")} at ${meetingTime}\n` +
-              `💰 Payment: ₹5 Paid\n` +
-              `📹 Meet Link: https://meet.google.com/hhx-cwdr-myb\n` +
-              `✅ Razorpay ID: ${response.razorpay_payment_id}`
-            );
-
             toast.dismiss("confirm");
             toast.success("Payment successful! Booking confirmed.");
-            window.open(`https://wa.me/919324236203?text=${msg}`, "_blank");
             onComplete();
           } catch (err: any) {
             console.error("SUPABASE INSERT ERROR:", err);

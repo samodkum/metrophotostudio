@@ -33,9 +33,6 @@ const Index = () => {
     const timer = setTimeout(() => {
       const visited = sessionStorage.getItem("metro_visited");
       if (!visited) {
-        // If they are not signed in, maybe don't pop up the inquiry form yet? 
-        // Or call openBooking() so they are prompted to sign in.
-        // Let's call openBooking() to match the intended flow.
         openBooking();
         sessionStorage.setItem("metro_visited", "1");
       }
@@ -54,9 +51,6 @@ const Index = () => {
       });
     }
   };
-
-  // If the user just signed in and was trying to book, we want to open the booking automatically.
-  // We can use a simple URL param or local storage flag if needed, but for now we just handle it when they click the button again.
 
   const handleSelection = (type: "free" | "paid") => {
     setBookingType(type);
@@ -114,18 +108,8 @@ const Index = () => {
           })
         });
 
-        // 3. Notify Admin Support via WhatsApp
-        const msg = encodeURIComponent(
-          `📞 *Free Callback Requested - Metro Photo Studio*\n\n` +
-          `👤 Name: ${inquiryData.fullName}\n` +
-          `📱 Phone: ${inquiryData.phone}\n` +
-          `📸 Category: ${inquiryData.shootCategory}\n` +
-          `📅 Requested Call: ${format(date, "PPP")} at ${time}\n`
-        );
-
         toast.dismiss("free-booking");
         toast.success("Callback booked successfully! Our team will call you at the scheduled time.");
-        window.open(`https://wa.me/919324236203?text=${msg}`, "_blank");
 
         handleComplete();
 

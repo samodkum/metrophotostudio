@@ -66,6 +66,29 @@ const MeetingScheduler = ({ open, onOpenChange, onSubmit }: MeetingSchedulerProp
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // Helper: convert "02:00 PM" to 24h number (14)
+  const slotToHour = (slot: string): number => {
+    const [timePart, meridiem] = slot.split(" ");
+    let [hours] = timePart.split(":").map(Number);
+    if (meridiem === "PM" && hours !== 12) hours += 12;
+    if (meridiem === "AM" && hours === 12) hours = 0;
+    return hours;
+  };
+
+  const isToday = selectedDate
+    ? selectedDate.getFullYear() === new Date().getFullYear() &&
+    selectedDate.getMonth() === new Date().getMonth() &&
+    selectedDate.getDate() === new Date().getDate()
+    : false;
+
+  const currentHour = new Date().getHours();
+
+  const availableSlots = timeSlots.filter((slot) => {
+    if (bookedSlots.includes(slot)) return false;
+    if (isToday && slotToHour(slot) <= currentHour) return false;
+    return true;
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg bg-card border-border max-h-[90vh] overflow-y-auto">
@@ -99,10 +122,10 @@ const MeetingScheduler = ({ open, onOpenChange, onSubmit }: MeetingSchedulerProp
               {loadingSlots && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-2" />}
             </h3>
             <div className="grid grid-cols-3 gap-2">
-              {timeSlots.filter(slot => !bookedSlots.includes(slot)).length === 0 && !loadingSlots ? (
+              {availableSlots.length === 0 && !loadingSlots ? (
                 <p className="text-sm text-muted-foreground col-span-3 text-center py-4 bg-secondary rounded-lg border border-border">No slots available for this date.</p>
               ) : (
-                timeSlots.filter(slot => !bookedSlots.includes(slot)).map((slot) => {
+                availableSlots.map((slot) => {
                   return (
                     <button
                       key={slot}
